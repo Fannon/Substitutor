@@ -28,8 +28,8 @@
 // VARIABLES                            //
 //////////////////////////////////////////
 
-$dir         = dirname( __FILE__ );
-$dirbasename = basename( $dir );
+$dir = dirname(__FILE__);
+$dirbasename = basename($dir);
 
 
 //////////////////////////////////////////
@@ -37,15 +37,14 @@ $dirbasename = basename( $dir );
 //////////////////////////////////////////
 
 $wgExtensionCredits['other'][] = array(
-   'path'           => __FILE__,
-   'name'           => 'Substitutor',
-   'author'         => array('Simon Heimler'),
-   'version'        => '1.0.0',
-   'url'            => 'https://www.mediawiki.org/wiki/Extension:Substitutor',
-   'descriptionmsg' => 'substitutor-desc',
-   'license-name'   => 'MIT'
+    'path' => __FILE__,
+    'name' => 'Substitutor',
+    'author' => array('Simon Heimler'),
+    'version' => '1.1.0',
+    'url' => 'https://www.mediawiki.org/wiki/Extension:Substitutor',
+    'descriptionmsg' => 'substitutor-desc',
+    'license-name' => 'MIT'
 );
-
 
 
 //////////////////////////////////////////
@@ -61,39 +60,48 @@ $wgHooks['PageContentSave'][] = 'onPageContentSave';
 //////////////////////////////////////////
 
 /**
-* Hook: After a wiki page is saved,
-* look for the <substitute> tag, parse its content and replace the complete tag with it.
-*/
-function onPageContentSave( &$wikiPage, &$user, &$content, &$summary, $isMinor, $isWatch, $section, &$flags, &$status ) {
+ * Hook: After a wiki page is saved,
+ * look for the <substitute> tag, parse its content and replace the complete tag with it.
+ */
+function onPageContentSave(&$wikiPage, &$user, &$content, &$summary, $isMinor, $isWatch, $section, &$flags, &$status)
+{
 
-  global $wgOut;
+    global $wgOut;
 
-  $re = "/<substitute>(.*?)<\\/substitute>/s";
+    $re = "/<substitute>(.*?)<\\/substitute>/s";
 
-  $text = $content->getContentHandler()->serializeContent($content);
+    $text = $content->getContentHandler()->serializeContent($content);
+    $title = $wikiPage->getTitle();
+    $namespace = $title->getNamespace();
 
-  $newText = $text;
-
-  preg_match_all($re, $newText, $matches);
-
-  if ($matches[1]) {
-    foreach ($matches[1] as $match) {
-      $replacement = $wgOut->parseInline($match, false);
-
-      $completeMatch = '<substitute>' . $match . '</substitute>';
-
-      // Only replace the first instance of the match within the wikitext
-      // http://stackoverflow.com/a/1252710/776425
-      $pos = strpos($newText, $completeMatch);
-      if ($pos !== false) {
-        $newText = substr_replace($newText, $replacement, $pos, strlen($completeMatch));
-      }
+    // Do not execute substitutions for the Form: Namespace
+    // This makes it possible to use substitutions in form field's default values
+    if ($namespace === 106) {
+        return true;
     }
-  }
 
-  if ( $newText != $text ) {
-      $content = $content->getContentHandler()->unserializeContent( $newText );
-  }
+    $newText = $text;
 
-  return true;
+    preg_match_all($re, $newText, $matches);
+
+    if ($matches[1]) {
+        foreach ($matches[1] as $match) {
+            $replacement = $wgOut->parseInline($match, false);
+
+            $completeMatch = '<substitute>' . $match . '</substitute>';
+
+            // Only replace the first instance of the match within the wikitext
+            // http://stackoverflow.com/a/1252710/776425
+            $pos = strpos($newText, $completeMatch);
+            if ($pos !== false) {
+                $newText = substr_replace($newText, $replacement, $pos, strlen($completeMatch));
+            }
+        }
+    }
+
+    if ($newText != $text) {
+        $content = $content->getContentHandler()->unserializeContent($newText);
+    }
+
+    return true;
 }
