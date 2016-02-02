@@ -40,7 +40,7 @@ $wgExtensionCredits['other'][] = array(
     'path' => __FILE__,
     'name' => 'Substitutor',
     'author' => array('Simon Heimler'),
-    'version' => '1.1.0',
+    'version' => '1.2.0',
     'url' => 'https://www.mediawiki.org/wiki/Extension:Substitutor',
     'descriptionmsg' => 'substitutor-desc',
     'license-name' => 'MIT'
@@ -53,6 +53,7 @@ $wgExtensionCredits['other'][] = array(
 
 // Register hooks
 $wgHooks['PageContentSave'][] = 'onPageContentSave';
+$wgHooks['ParserFirstCallInit'][] = 'onParserSetup';
 
 
 //////////////////////////////////////////
@@ -104,4 +105,15 @@ function onPageContentSave(&$wikiPage, &$user, &$content, &$summary, $isMinor, $
     }
 
     return true;
+}
+
+function onParserSetup( Parser $parser ) {
+    $parser->setHook( 'substitute', 'renderSubstituteTag' );
+}
+
+// Return the tag exactly as it was, including the tag itself
+// The actual substitution will be made on the "onPageContentSave" hook
+// This is just to prevent mediawiki from dynamically parsing the content within the tag
+function renderSubstituteTag( $input, array $args, Parser $parser, PPFrame $frame ) {
+    return '<substitute>' . $input . '</substitute>';
 }
